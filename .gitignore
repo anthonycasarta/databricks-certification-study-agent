@@ -1,0 +1,99 @@
+# ==========================================
+# Python
+# ==========================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+
+.venv/
+venv/
+env/
+ENV/
+
+# ==========================================
+# Environment Variables and Secrets
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+
+# Databricks local authentication
+.databrickscfg
+.databricks/
+
+# ==========================================
+# Testing and Code Quality
+# ==========================================
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+
+# ==========================================
+# Neovim and Editor Files
+# ==========================================
+
+*.swp
+*.swo
+*~
+Session.vim
+Sessionx.vim
+
+# ==========================================
+# macOS
+# ==========================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ==========================================
+# Local Data and Generated Files
+# ==========================================
+
+data/raw/
+data/processed/
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# ==========================================
+# Logs
+# ==========================================
+
+*.log
+logs/
+
+# ==========================================
+# Jupyter (if used)
+# ==========================================
+
+.ipynb_checkpoints/
