@@ -1,5 +1,8 @@
 # Databricks Certification Study Agent
 
+[![Test](https://github.com/anthonycasarta/databricks-certification-study-agent/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/anthonycasarta/databricks-certification-study-agent/actions/workflows/test.yml)
+[![Lint](https://github.com/anthonycasarta/databricks-certification-study-agent/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/anthonycasarta/databricks-certification-study-agent/actions/workflows/lint.yml)
+
 A Retrieval-Augmented Generation (RAG) study assistant for the **Databricks Certified Data Engineer Associate** certification.
 
 ## Overview
