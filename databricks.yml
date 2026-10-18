@@ -1,0 +1,40 @@
+bundle:
+  name: study-agent
+  engine: direct
+
+variables:
+  catalog_name:
+    description: "Name of the existing Unity Catalog catalog used by the Study Agent."
+    default: study_agent
+
+resources:
+  schemas:
+    bronze:
+      name: bronze
+      catalog_name: ${var.catalog_name}
+      comment: "Raw source documents and ingestion metadata."
+
+    silver:
+      name: silver
+      catalog_name: ${var.catalog_name}
+      comment: "Extracted, normalized, and chunked document content."
+
+    gold:
+      name: gold
+      catalog_name: ${var.catalog_name}
+      comment: "Curated document data prepared for semantic retrieval."
+
+  volumes:
+    source_documents:
+      name: source_documents
+      catalog_name: ${var.catalog_name}
+      schema_name: ${resources.schemas.bronze.name}
+      volume_type: MANAGED
+      comment: "Original PDF and Markdown study documents"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      profile: study-agent-dev
