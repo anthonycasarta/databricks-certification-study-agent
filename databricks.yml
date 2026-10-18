@@ -2,6 +2,9 @@ bundle:
   name: study-agent
   engine: direct
 
+include:
+  - resources/*.yml
+
 variables:
   catalog_name:
     description: "Name of the existing Unity Catalog catalog used by the Study Agent."

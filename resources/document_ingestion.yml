@@ -1,0 +1,12 @@
+resources:
+  pipelines:
+    document_ingestion:
+      name: document-ingestion
+      catalog: ${var.catalog_name}
+      schema: ${resources.schemas.bronze.name}
+      serverless: true
+      configuration:
+        source_documents_path: /Volumes/${var.catalog_name}/${resources.schemas.bronze.name}/${resources.volumes.source_documents.name}/
+      libraries:
+        - file:
+            path: ../src/study_agent/ingestion/pipelines/bronze.py
