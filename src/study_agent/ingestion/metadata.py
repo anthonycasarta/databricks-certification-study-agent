@@ -1,12 +1,12 @@
 from hashlib import sha256
-from pathlib import Path
+from pathlib import PurePosixPath
 from uuid import uuid4
 
 from study_agent.ingestion.enums import DocumentFileType
 
 
 def determine_file_type(file_name: str) -> DocumentFileType:
-    extension = Path(file_name).suffix.lstrip(".").lower()
+    extension = PurePosixPath(file_name).suffix.lstrip(".").lower()
 
     return DocumentFileType(extension)
 
@@ -20,3 +20,8 @@ def calculate_content_hash(content: bytes) -> str:
 def generate_document_id() -> str:
     generated_id = uuid4()
     return str(generated_id)
+
+
+def extract_file_name(path: str) -> str:
+    file_name = PurePosixPath(path).name
+    return file_name

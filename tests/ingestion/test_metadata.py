@@ -5,6 +5,7 @@ from pytest import raises
 from study_agent.ingestion.metadata import (
     calculate_content_hash,
     determine_file_type,
+    extract_file_name,
     generate_document_id,
 )
 
@@ -68,3 +69,27 @@ def test_generated_id_is_a_valid_uuid4():
     parsed_uuid = UUID(generated_id)
 
     assert parsed_uuid.version == 4
+
+
+def test_extract_file_name_from_absolute_path():
+    path = "/Volumes/study_agent/bronze/source_documents/delta.md"
+    extracted_file_name = extract_file_name(path)
+    expected_file_name = "delta.md"
+
+    assert extracted_file_name == expected_file_name
+
+
+def test_extracted_file_name_from_nested_path():
+    path = "/Volumes/study_agent/bronze/source_documents/notes/spark.md"
+    extracted_file_name = extract_file_name(path)
+    expected_file_name = "spark.md"
+
+    assert extracted_file_name == expected_file_name
+
+
+def test_extracted_file_name_from_filename():
+    path = "document.md"
+    extracted_file_name = extract_file_name(path)
+    expected_file_name = "document.md"
+
+    assert extracted_file_name == expected_file_name
