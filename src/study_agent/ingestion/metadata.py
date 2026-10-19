@@ -1,5 +1,6 @@
 from hashlib import sha256
 from pathlib import Path
+from uuid import uuid4
 
 from study_agent.ingestion.enums import DocumentFileType
 
@@ -14,3 +15,8 @@ def calculate_content_hash(content: bytes) -> str:
     hashed_content = sha256(content)
 
     return hashed_content.hexdigest()
+
+
+def generate_document_id() -> str:
+    generated_id = uuid4()
+    return str(generated_id)
