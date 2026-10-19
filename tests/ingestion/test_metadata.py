@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from pytest import raises
@@ -7,6 +8,7 @@ from study_agent.ingestion.metadata import (
     determine_file_type,
     extract_file_name,
     generate_document_id,
+    generate_ingestion_timestamp,
 )
 
 
@@ -93,3 +95,21 @@ def test_extracted_file_name_from_filename():
     expected_file_name = "document.md"
 
     assert extracted_file_name == expected_file_name
+
+
+def test_ingestion_timestamp_returns_datetime():
+    timestamp = generate_ingestion_timestamp()
+
+    assert isinstance(timestamp, datetime)
+
+
+def test_ingestion_timestamp_is_utc():
+    timestamp = generate_ingestion_timestamp()
+
+    assert timestamp.utcoffset() == timedelta(0)
+
+
+def test_ingestion_timestamp_is_timezone_aware():
+    timestamp = generate_ingestion_timestamp()
+
+    assert timestamp.tzinfo is not None

@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import PurePosixPath
 from uuid import uuid4
@@ -25,3 +26,7 @@ def generate_document_id() -> str:
 def extract_file_name(path: str) -> str:
     file_name = PurePosixPath(path).name
     return file_name
+
+
+def generate_ingestion_timestamp() -> datetime:
+    return datetime.now(UTC)
