@@ -24,6 +24,7 @@ The application should help users study certification material by retrieving rel
 - Do not repeat completed milestones or implementation steps.
 - Do not replace existing implementations without first reviewing them.
 - Distinguish between implemented functionality, agreed architecture, and future plans.
+- Prioritize completing the full V1 application before implementing optional improvements and edge cases.
 
 ## Learning-First Workflow
 
@@ -47,6 +48,8 @@ When introducing a new concept, technology, or significant design decision:
 Do not provide full copy-paste implementations unless explicitly requested.
 
 Avoid repeatedly assessing concepts the developer has already demonstrated understanding of unless new requirements introduce meaningful differences.
+
+Do not introduce additional complexity solely for educational purposes if it unnecessarily delays completing V1.
 
 ## Technology Stack
 
@@ -89,12 +92,12 @@ Prefer clear boundaries between ingestion, retrieval, generation, evaluation, an
 
 **Bronze**
 
-- `documents_raw`: Original document bytes, source information, and observed document versions.
+- `documents_raw`: Original document bytes and source information.
 - `document_metadata`: Logical document identity and source metadata.
 
 **Silver**
 
-- `documents_processed`: Extracted and normalized document text, associated with document identity and the relevant source version.
+- `documents_processed`: Extracted and normalized document text associated with its document identity.
 
 **Gold**
 
@@ -102,45 +105,64 @@ Prefer clear boundaries between ingestion, retrieval, generation, evaluation, an
 
 These table responsibilities are agreed architectural intentions. Do not assume every table has already been implemented.
 
+### V1 Document Lifecycle
+
+V1 prioritizes completing a working end-to-end RAG application over sophisticated document lifecycle management.
+
+**V1 assumptions:**
+
+- Source documents are uploaded once and treated as immutable.
+- Filenames and file paths remain unchanged after ingestion.
+- PDF and Markdown are the supported document formats.
+- Each new logical document receives a UUID4 during registration.
+- `document_metadata` persists the assigned document identity.
+- `file_path` is the logical document lookup key.
+- Document registration should be idempotent under retries.
+- A repeated registration attempt must reuse an existing document ID rather than create another logical identity.
+- `content_hash` identifies document content but is not the logical document ID.
+- No automatic document modification detection or historical version tracking is required.
+- No automatic reprocessing of modified documents is required.
+
+**Deferred until after V1:**
+
+- Detecting document content modifications.
+- Handling renamed or moved documents.
+- Maintaining historical document versions.
+- Automatically reprocessing updated documents.
+- Document deletion and cleanup workflows.
+- Advanced document lifecycle management.
+
+Do not introduce these deferred capabilities during V1 unless they become essential for correctness.
+
 ### Document Identity
 
-The agreed logical identity design is:
+The agreed V1 identity design is:
 
-- A document receives a UUID4 when first registered.
-- The same logical document retains its UUID when its contents change at the same source path.
-- `file_path` is the V1 logical document lookup key.
-- `document_metadata` is the authoritative source of the `file_path` to `document_id` mapping.
-- `documents_raw` preserves raw source information and observed versions.
-- Reprocessing an existing document must not create another logical document identity.
-- A renamed or moved document may be treated as a new document in V1.
-- `content_hash` identifies source content, not logical document identity.
+- Generate a UUID4 when a document is first registered.
+- Persist the UUID in `document_metadata`.
+- Reuse the existing UUID when a registration task is retried.
+- Use `file_path` to look up previously registered documents.
+- Treat source files as immutable after upload.
+- Use `content_hash` for document fingerprinting.
 
-The registration mechanism is **not yet implemented**.
+`document_metadata` is the authoritative source for mapping `file_path` to `document_id`.
 
-### Document Versioning
+The registration mechanism has not yet been implemented.
 
-The intended behavior is:
-
-- Preserve observed document versions in Bronze.
-- Reuse the logical document ID when the file changes.
-- Use content hashes to distinguish changed content.
-- Maintain current document metadata separately from raw version history.
-- Avoid unnecessary downstream reprocessing of unchanged content.
-
-Auto Loader does not automatically guarantee preservation of every overwrite or intermediate file version. Version discovery, ordering, and retention behavior must be designed and validated.
+Do not introduce a separate identity registry unless a demonstrated technical limitation requires one.
 
 ### Timestamps
 
-Distinguish:
+The existing Python metadata model contains `ingested_at`.
 
-- `ingested_at`: When an observed document version enters Bronze.
-- `registered_at`: When the logical document is first registered.
-- `last_ingested_at`: When the latest observed version entered Bronze.
-- `modification_time`: The source file's modification timestamp.
+For V1:
 
-Use timezone-aware UTC timestamps.
+- Retain `ingested_at` in the existing model unless a concrete requirement justifies changing it.
+- Use timezone-aware UTC timestamps.
+- Avoid introducing multiple lifecycle timestamps without a clear use case.
+- Source file modification timestamps may be retained when provided by Auto Loader.
 
-The existing Python metadata model still contains `ingested_at`. Its reconciliation with the updated architecture is pending.
+Fields such as `registered_at` and `last_ingested_at` are not required for the initial V1 implementation.
 
 ### Processing and Orchestration
 
@@ -166,11 +188,14 @@ Distinguish task-level failures from individual document-processing failures.
 
 ### CDC and AUTO CDC
 
-- Delta Change Data Feed and AUTO CDC are not automatically required simply because Bronze preserves document versions.
-- An append-only history of observed files is not automatically a semantic document CDC event stream.
-- AUTO CDC may be considered if properly keyed and sequenced change events are introduced.
-- Prefer the simplest reliable approach that satisfies V1 requirements.
-- Do not implement AUTO CDC without first demonstrating why it is needed.
+Change Data Feed and AUTO CDC are not required for the initial V1 document lifecycle.
+
+- Do not introduce AUTO CDC solely for document ingestion.
+- Do not implement document version tracking during V1.
+- Do not build change-event processing without a demonstrated requirement.
+- Revisit CDC-related capabilities when implementing post-V1 document updates.
+
+Prefer the simplest reliable implementation that satisfies the current milestone.
 
 ## Repository Conventions
 
@@ -286,6 +311,26 @@ The following functionality has already been implemented and validated.
 - Databricks bundle validation and deployment.
 - Bronze Auto Loader ingestion pipeline.
 
+### Bronze Ingestion Pipeline
+
+The existing ingestion pipeline uses Auto Loader with the `binaryFile` format.
+
+The pipeline currently captures:
+
+- `path`
+- `modificationTime`
+- `length`
+- `content`
+
+Relevant existing files include:
+
+- `src/study_agent/ingestion/pipelines/bronze.py`
+- `resources/document_ingestion.yml`
+
+Do not recreate the Bronze ingestion pipeline.
+
+Extend the existing implementation only when required by the current step.
+
 ### Document Models
 
 Existing Python models include:
@@ -307,7 +352,9 @@ The current `DocumentMetadata` model contains:
 
 Do not recreate these models.
 
-Their fields may be revised after reconciling the newer metadata architecture.
+Reuse them where appropriate.
+
+Only change their fields when a specific implementation requirement justifies the modification.
 
 ### Metadata Utilities
 
@@ -364,12 +411,14 @@ Do not restart Milestone 1.
 - [x] 2.4.6 — Filename extraction
 - [x] 2.4.7 — UTC ingestion timestamp generation
 - [x] 2.4.8 — Status handling architecture decision; custom FSM deferred
-- [ ] **2.4.9 — Metadata integration (CURRENT)**
+- [ ] **2.4.9 — Basic metadata integration (CURRENT)**
 - [ ] 2.5 — PDF and Markdown text extraction
 - [ ] 2.6 — Text normalization and chunking
 - [ ] 2.7 — Silver processing tables
-- [ ] 2.8 — Incremental processing and version handling
+- [ ] 2.8 — Basic incremental ingestion and retry safety
 - [ ] 2.9 — End-to-end ingestion validation
+
+Step 2.8 does not include document update detection, version history, or changed-document reprocessing.
 
 ### Milestone 3 — Embeddings and Retrieval
 
@@ -417,10 +466,24 @@ Planned work includes:
 - Deployment documentation
 - Final validation and reproducibility
 
+## Post-V1 Backlog
+
+The following improvements are explicitly deferred until the end-to-end V1 application is working:
+
+- Document modification detection
+- Document version history
+- Rename and move handling
+- Updated document reprocessing
+- Document deletion and cleanup
+- Advanced incremental document synchronization
+- Advanced document lifecycle management
+
+Do not introduce these features prematurely.
+
 ## Current Development Checkpoint
 
 **Current milestone:** 2 — Document Ingestion  
-**Current step:** 2.4.9 — Metadata Integration  
+**Current step:** 2.4.9 — Basic Metadata Integration  
 **Current branch:** `feature/document-ingestion`
 
 The latest completed implementation is Step 2.4.7, UTC ingestion timestamp generation.
@@ -429,20 +492,21 @@ The latest completed design decision is Step 2.4.8, which deferred custom docume
 
 ### Current Task
 
-Reconcile the existing `DocumentMetadata` Python model with the agreed Bronze metadata architecture.
+Integrate the existing metadata models and utilities into the Bronze ingestion workflow.
 
-Specifically, review:
+Focus on:
 
-- Whether `ingested_at` should become `registered_at`.
-- Whether `last_ingested_at` belongs in current document metadata.
-- Whether `status` should remain in the model.
-- How `documents_raw` and `document_metadata` will relate.
-- How UUID4 values will be assigned and persisted reliably.
-- How observed document versions will be represented.
+1. Reusing the existing `DocumentMetadata` model.
+2. Preserving the existing Bronze Auto Loader pipeline.
+3. Defining the Bronze `document_metadata` Delta table.
+4. Registering new documents with UUID4 identifiers.
+5. Persisting the document ID and associated metadata.
+6. Ensuring retries do not create duplicate logical document identities.
+7. Testing and validating the registration workflow.
 
-These are pending implementation decisions. Do not treat them as completed code.
+Do not implement document version tracking or changed-document reprocessing.
 
-After reconciling the model, proceed incrementally with the metadata Delta table and registration logic.
+The registration implementation has not yet been completed.
 
 ### Latest Git Checkpoint
 
@@ -470,6 +534,7 @@ When continuing this project in another conversation:
 12. Explicitly instruct when to commit and immediately push.
 13. Update milestone tracking after meaningful progress.
 14. Resume from the latest incomplete step rather than generating a new project plan.
+15. Prioritize completing V1 before implementing deferred document lifecycle improvements.
 
 ## Agent Behavior
 
