@@ -10,3 +10,27 @@ resources:
       libraries:
         - file:
             path: ../src/study_agent/ingestion/pipelines/bronze.py
+
+  jobs:
+    document_ingestion_job:
+      name: document-ingestion-job
+      environments:
+        - environment_key: registration_environment
+          spec:
+            environment_version: "2"
+      tasks:
+        - task_key: run_document_ingestion
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.document_ingestion.id}
+
+        - task_key: register_documents
+          environment_key: registration_environment
+          spark_python_task:
+            python_file: ../src/study_agent/ingestion/jobs/register_documents.py
+            parameters:
+              - "--catalog-name"
+              - "${var.catalog_name}"
+              - "--schema-name"
+              - "${resources.schemas.bronze.name}"
+          depends_on:
+            - task_key: run_document_ingestion
