@@ -1,0 +1,16 @@
+resources:
+  jobs:
+    integration_test_job:
+      name: study-agent-integration-tests
+      environments:
+        - environment_key: integration_test_environment
+          spec:
+            environment_version: "2"
+            dependencies:
+              - pytest
+
+      tasks:
+        - task_key: run_integration_tests
+          environment_key: integration_test_environment
+          spark_python_task:
+            python_file: ../tests/integration/run_integration_tests.py
